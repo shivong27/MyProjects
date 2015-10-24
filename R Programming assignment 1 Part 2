@@ -1,0 +1,46 @@
+##This is the R Programming assignment Part 2 from the R Programming assignments on Coursera
+complete <- function(directory, id = 1:332) {
+  
+  
+  dataframe = NULL  
+  setwd(file.path(getwd(), directory))  ##Setting up the working directory
+  
+  
+  for (i in id)   ##for different directories we are iterating
+{
+    
+    
+      
+      if (i <10) { 
+                         data <- read.csv(paste("0","0", as.character(i), ".csv", sep=""),  ## for example, if 'id' =7, we get 007.csv
+                                          header = T, 
+                                          na.strings=c("NA","NaN", " "))
+                 }
+      
+else if (i>=10 & i<100) { 
+                         data <- read.csv(paste("0", as.character(i), ".csv", sep=""),  ## for example, if 'id' = 17, we get 017.csv
+                                          header = T, 
+                                          na.strings=c("NA","NaN", " ") 
+                                          )
+                        }
+                     
+       
+
+     else       { 
+                        data <- read.csv(paste(as.character(i), ".csv", sep=""),     ## Normal
+                                         header = T, 
+                                         na.strings=c("NA","NaN", " ") 
+                                        )
+                }
+  
+  
+    
+    
+  }
+  
+  setwd("..") 
+  dataframe = data.frame(dataframe)   
+  names(dataframe) = c('id', 'nobs')
+  return (dataframe) 
+}
+
