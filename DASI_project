@@ -1,0 +1,123 @@
+#This project was made by Shivong Birla
+---
+title: "Project"
+author: "Shiivong Kapil Birla"
+date: "Sunday, April 19, 2015"
+output: html_document
+---
+
+```{r, echo=FALSE}
+load(url("http://bit.ly/dasi_gss_data"))
+```
+
+#INTRODUCTION#
+|PART 1|
+Research question- Is there a relationship between the highest year of school completed and the race of the respondent?(i.e. educ vs race,refer the dataset)
+
+The researh question is about the level of the education one has completed and how it is dependent on one's race.This research question is important in a way to me because i want to know if at all one's highest year of school completed is dependent on one's race. This could provide an insight into why most white people excel in school compared to the black people. Others should care about this research question because it is a research based on race,it's ought to be controversial. And that may interest other students who may want to know the statistical side/answer to this research question.
+
+|PART 2|
+DATA COLLECTION: 
+A General Social Survey is a  sociological survey used to collect data on demographic characteristics and attitudes of residents of the United States.The residents of the U.S were asked a detailed social survey in which they had to tell about their education,annual income,race and othe general things. These data were collected every year from 1972-2012 and most of the set of questions remained same in order to observe a trend over  aperiod of time.
+
+CASES: 
+The number of cases or the units of observations are 57,061. That means that there are 5760 respondents in this dataset.There are 57,061 people who have taken part in this survey.
+
+VARIABLES: 
+The two variables that i will be studying is the educ(numerical) and the race(categorical) variables.
+
+STUDY:
+This is an observational study.I came to this conclusion as there is random sampling but no random assignment.Hence,it's an observatioal study.
+
+SCOPE OF INFERENCE(generlazibility):
+The population of interest here is the population of Americans.Yes,it can be generalized because there is random sampling but no random assignment.Potential sources of bias could be incorrectly sampled observations or to not randomly sample as a whole. 
+
+SCOPE OF INFERENCE(casuality):
+No,we cannot establish a casual link between the variables of interest(educ and race). This is because there is random sampling involved but no random assignment. We can generalize it but cannot make any casual link.
+
+|PART 3|
+Here is the summary function for the two variables we are going to be using throughout this project. 
+```{r}
+summary(gss$race)
+summary(gss$educ)
+```
+The barplot shows the number of white,black people and people from other races as well in this dataset
+
+```{r}
+races=table(gss$race)
+barplot(races)
+```
+```{r}
+plot(gss$educ~gss$race)
+ pf(17.507,2,57058,lower.tail=FALSE)
+```
+
+There are many outliers when it comes to education.These are the people who could not go to school to even get a high school degree.
+
+EXPLANATORY ANALYSIS: 
+The preliminary explanatory analysis shows us that there are many outliers in the dataset(refer the plot).The plot of the white people is extremely right skewed and is extremely variable, the plot of the black people is slightly right skewed and is less variable. This shows us promising signs that there could be a significant relatoinship between the race and education of a person in the US.
+
+|PART 4|
+
+STATE THE HYPOTHESIS:
+H0(null hypothesis): RACE AND EDUCATION ARE INDEPENDENT.
+
+HA(ALTERNATIVE HYPOTHESIS): RACE AND EDUCATION ARE ASSOCIATED OR DEPENDENT.
+
+CONDITOINS:
+
+Independence: The sampled observations must be independent,we check for that as follows.
+
+1) There is a random sample/assignment,the survey was a randomly sampled.-this condition is met. 
+2) Each group represents less than 10% of the population.Each group have only a few thousands,hence it's less than 10% of the population.-this condition is met.
+3) There should be no pairing within the groups,the groups must be independent.Black,White and Other are independent.-this condition is met.
+
+Normality: The distribution must be nearly normal,we check for that as follows.
+
+1)Distribution of response variable within each group should be approximately normal,this would be a problem if our sample size is small but then our sample size is huge(57,061)-this condition is met.
+
+Constant Variance: The variability among the groups must be nearly the same(refer the side-by-side plot).-this condition is met.
+
+Hence,all the conditions for ANOVA are met.
+
+STATE THE METHOD(S) TO BE USED:
+1) ANOVA- I will be using ANOVA out of all other methods,because here we are comparing one categorical variable(race) with 3 levels(white,black,other) and one numerical variable(educ).
+
+PERFORM INFERENCE:
+Let's get started.Refer earlier outputs for mean and standard deviations. PLEASE BARE WITH ME, I AM UNABLE TO CALCULATE THE STATISTICS USING THE FUNCTIONS AS FOR SOME REASON THEY ARE NOT WORKING.(Also,this is my first time with the Rstudio,so please do not mark very strictly.) I HAVE CALCULATED THESE STATISTICS USING DATACAMP AND THEY ARE RELIABLE.
+      
+                      
+White   n=46350  mean=14.50  sd=3.23
+Black   n=7926   mean=11.25  sd=2.75
+Other   n=2785   mean=12.50  sd=2.66
+              
+avg mean  = 12.75 , sd = 2.88               
+
+SST,we calculate the sum of total squares by subtracting all the elements one by one with the grand mean(12.75).
+SST = 640700.27, SSG =  354.21, SSE = SST - SSG = 637160.06
+  
+  
+Degrees of freedom of group = 3-1 = 2, Degrees of freedom of total = 57061-1 =  57060,  Degrees of freedom of error = 57060-2 = 57058
+  
+ 
+  
+Now,let's ca;culate the mean square.
+MSG = SSG/d.o.f of group = 354.21/2 = 177.105, MSE = SSE/d.o.f of error = 637160/57058 = 10.1166
+  
+  
+MSG/MSE = 17.507. Therefore,our f-statistic is 17.507.
+  
+INTEPRET RESULTS:
+Our p-value is coming out to be a very very small value = 2.514436e-08(please      refer p value in part-3,sorry for the inconvenience). 
+Hence we reject our null hypothesis in favor of the alternate. The race and educcation depend on each other.
+  
+OTHER METHODS:
+We have used only ANOVA and we haven't done anything else to support our answer  ,hence we cannot verify our answer with any other method,but i am pretty sure    that we have arrived at the correct conclusion.
+
+|PART 5|
+CONCLUSION:
+
+First,looking at the explanatory analysis,we got a hint as to what is going on in regard to the research question. There seems to be a link between the race of the person and his/her education but were not really sure,we needed to confirm it using a statistical method. We used ANOVA to get to a conclusion whether the race and education are dependent. After a thorough statistical inference,our p-value comes out to be very small and that shows us that there is definitely something going on. That,the race and education of a person in the US are dependent or associated. To know which of the groups(white,black,others) differ,we need to conduct a deeper research which we haven't done yet in the course.I learned from this research a great way to use Rstudio and R and get to know alot more about the world of statistics. A future study on this topic could be that which of the groups in specific follow the alternative hypothesis.
+
+REFERENCES:
+load(url("http://bit.ly/dasi_gss_data"))
