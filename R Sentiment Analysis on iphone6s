@@ -1,0 +1,164 @@
+R- SENTIMENT ANALYSIS
+SOURCE CODE:
+library("tm")
+library("NLP")
+library("Rstem")
+library("twitteR")
+library("sentiment")
+library("plyr")
+library("ggplot2")
+library("wordcloud")
+library("RColorBrewer")
+library("ROAuth")
+library("httk")
+library("base64enc")
+library("SnowballC")
+
+download.file(url="http://curl.haxx.se/ca/cacert.pem",destfile="cacert.pem")
+
+#create an object "cred" that will save the authenticated object that we can use for later sessions
+cred <- OAuthFactory$new(consumerKey='type ur consumer key',
+                         consumerSecret='type ur consumer secret key',
+                         requestURL='https://api.twitter.com/oauth/request_token',
+                         accessURL='https://api.twitter.com/oauth/access_token',
+                         authURL='https://api.twitter.com/oauth/authorize')
+
+# Executing the next step generates an output --  To enable the connection, please direct your web browser to: <hyperlink  . Note:  You only need to do this part once
+cred$handshake(cainfo="cacert.pem")
+
+
+save(cred, file="twitter authentication.Rdata")
+
+load("twitter authentication.Rdata")
+
+customer_key <- 'ltpJUCVPf0dF5awEeMuICCubp'
+customer_secret <- 'GcKbtzXhfGjIje3fL7DUY38warfkZ231D3cr8KKKXiN9t3iOAi'
+access_token <- '4027888634-igfeIOAYSVExtwPoLo7pbA2V9oJ1pOih8W1ey1P'
+access_secret <- '8McctpjrPBuVgHLuvAMrcKFLAkur42HK0YquqTDsFlwxl'
+
+setup_twitter_oauth(customer_key,customer_secret,access_token,access_secret)
+
+bjp_tweets = searchTwitter("BNP Paribas", n=2000, lang="en")
+
+# fetch the text of these tweets
+bjp_txt = sapply(bjp_tweets, function(x) x$getText())
+
+# Now we will prepare the above text for sentiment analysis
+
+# First we will remove retweet entities from the stored tweets (text)
+bjp_txt <- iconv(bjp_txt, to = "utf-8", sub="")
+
+bjp_txt = gsub("(RT|via)((?:\\b\\W*@\\w+)+)", "", bjp_txt)
+
+# Then remove all "@people"
+bjp_txt = gsub("@\\w+", "", bjp_txt)
+
+# Then remove all the punctuation
+bjp_txt = gsub("[[:punct:]]", "", bjp_txt)
+
+# Then remove numbers, we need only text for analytics
+bjp_txt = gsub("[[:digit:]]", "", bjp_txt)
+
+# the remove html links, which are not required for sentiment analysis
+bjp_txt = gsub("http\\w+", "", bjp_txt)
+
+# finally, we remove unnecessary spaces (white spaces, tabs etc)
+bjp_txt = gsub("[ \t]{2,}", "", bjp_txt)
+bjp_txt = gsub("^\\s+|\\s+$", "", bjp_txt)
+
+# if anything else, you feel, should be removed, you can. For example "slang words" etc using the above function and methods.
+
+# Since there can be some words in lower case and some in upper, we will try to eredicate this non-uniform pattern by making all the words in lower case. This makes uniform pattern.
+
+# Let us first define a function which can handle "tolower error handling", if arises any, during converting all words in lower case.
+catch.error = function(x)
+{
+        # let us create a missing value for test purpose
+        y = NA
+        # try to catch that error (NA) we just created
+        catch_error = tryCatch(tolower(x), error=function(e) e)
+        # if not an error
+        if (!inherits(catch_error, "error"))
+                y = tolower(x)
+        # check result if error exists, otherwise the function works fine.
+        return(y)
+}
+
+# Now we will transform all the words in lower case using catch.error function we just created above and with sapply function
+bjp_txt = sapply(bjp_txt, catch.error)
+
+# Also we will remove NAs, if any exists, from bjp_txt (the collected and refined text in analysis)
+bjp_txt = bjp_txt[!is.na(bjp_txt)]
+
+# also remove names (column headings) from the text, as we do not want them in the sentiment analysis
+names(bjp_txt) = NULL
+
+# Now the text is fully prepared (or at least for this tutorial) and we are good to go to perform Sentiment Analysis using this text
+
+# As a first step in this stage, let us first classify emotions
+# In this tutorial we will be using Bayesâ algorithm to classify emotion categories
+# for more please see help on classify_emotion (?classify_emotion) under sentiment package
+bjp_class_emo = classify_emotion(bjp_txt, algorithm="bayes", prior=1.0)
+# the above function returns an of bject of class data.frame with seven columns (anger, disgust, fear, joy, sadness, surprise, best_fit) and one row for each document:
+
+# we will fetch emotion category best_fit for our analysis purposes, visitors to this tutorials are encouraged to play around with other classifications as well.
+emotion = bjp_class_emo[,7]
+
+# Replace NAâs (if any, generated during classification process) by word "unknown"
+# There are chances that classification process generates NA’s. This is because, sentiment package uses an in-built dataset "emotions", which containing approximately 1500 words classified into six emotion categories: anger, disgust, fear, joy, sadness, and surprise
+# If any words outside this dataset are given, the process will term the words as NA’s
+emotion[is.na(emotion)] = "unknown"
+
+# Similar to above, we will classify polarity in the text
+# This process will classify the text data into four categories (pos â The absolute log likelihood of the document expressing a positive sentiment, neg  The absolute log likelihood of the document expressing a negative sentimen, pos/neg  The ratio of absolute log likelihoods between positive and negative sentiment scores where a score of 1 indicates a neutral sentiment, less than 1 indicates a negative sentiment, and greater than 1 indicates a positive sentiment; AND best_fit â The most likely sentiment category (e.g. positive, negative, neutral) for the given text)
+
+bjp_class_pol = classify_polarity(bjp_txt, algorithm="bayes")
+
+# we will fetch polarity category best_fit for our analysis purposes, and as usual, visitors to this tutorials are encouraged to play around with other classifications as well
+polarity = bjp_class_pol[,4]
+
+# Let us now create a data frame with the above results obtained and rearrange data for plotting purposes
+# creating data frame using emotion category and polarity results earlier obtained
+sentiment_dataframe = data.frame(text=bjp_txt, emotion=emotion, polarity=polarity, stringsAsFactors=FALSE)
+
+# rearrange data inside the frame by sorting it
+sentiment_dataframe = within(sentiment_dataframe, emotion <- factor(emotion, levels=names(sort(table(emotion), decreasing=TRUE))))
+
+jpeg(file = "G:\R programing/Sentiment Analysis.jpg")
+ggplot(sentiment_dataframe, aes(x=emotion)) + geom_bar(aes(y=..count.., fill=emotion)) +
+        scale_fill_brewer(palette="Dark2") +
+        ggtitle('Sentiment Analysis of Tweets on Twitter about iphone6s') +
+        theme(legend.position='right') + ylab('Number of Tweets') + xlab('Emotion Categories')
+dev.off()
+
+jpeg(file = "G:\R programing/Sentiment Analysis.jpg")
+ggplot(sentiment_dataframe, aes(x=polarity)) + geom_bar(aes(y=..count.., fill=polarity)) +
+        scale_fill_brewer(palette="Set1") + ggtitle('Sentiment Analysis of Tweets on Twitter about iphone6s') +
+        theme(legend.position='right') + ylab('Number of Tweets') + xlab('Polarity Categories')
+dev.off()
+
+swb_emos = levels(factor(sentiment_dataframe$emotion))
+n_swb_emos = length(swb_emos)
+swb.emo.docs = rep("", n_swb_emos)
+for (i in 1:n_swb_emos)
+{
+        tmp = bjp_txt[emotion == swb_emos[i]]
+        swb.emo.docs[i] = paste(tmp, collapse=" ")
+}
+swb.emo.docs = removeWords(swb.emo.docs, stopwords("english"))
+swb.corpus = Corpus(VectorSource(swb.emo.docs))
+swb.tdm = TermDocumentMatrix(swb.corpus)
+swb.tdm = as.matrix(swb.tdm)
+colnames(swb.tdm) = swb_emos
+
+jpeg(file = "G:\R programing/Sentiment Analysis.jpg")
+comparison.cloud(swb.tdm, colors = brewer.pal(n_swb_emos, "Dark2"),scale = c(3,.5), random.order = FALSE, title.size = 1.5)
+dev.off()
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
